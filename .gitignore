@@ -9,3 +9,5 @@ a.out
 target/
 bin/
 **/debug
+obj/
+*.nuget.*
