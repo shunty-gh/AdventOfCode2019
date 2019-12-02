@@ -24,6 +24,8 @@ or (as of 2019-12-02)
 
 #### Linux &amp; WSL
 
+(Assuming you have done the one-time registration of the Microsoft key and feed as per the instructions above)
+
 ```bash
 $> sudo apt-get install dotnet-sdk-3.0
 ```
