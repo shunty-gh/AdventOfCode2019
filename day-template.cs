@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Serilog;
 
 namespace Shunty.AdventOfCode2019
