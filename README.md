@@ -4,12 +4,12 @@ A bunch of samples to help solve the [Advent of code 2019](https://adventofcode.
 
 Including a massively over-engineered C# program (Dotnet Core 3 - but probably works with most versions so long as you change the `TargetFramework` attribute in `aoc.csproj`) to run each days code.
 
-As it's Dotnet Core it's cross platform so even the beardy Linux users can have a go ;-)
+As it's Dotnet Core it's cross platform so even the beardy Linux users can have a go :wink:
 
 ## C# Stuff
 ### Install Dotnet Core
 
-#### Windows, Linux (and Windows Subsystem for Linux (WSL)), Mac
+#### Windows, Linux (including Windows Subsystem for Linux (WSL)), Mac
 
 * Go to https://docs.microsoft.com/en-gb/dotnet/core/install/sdk
 * Pick your OS
@@ -22,7 +22,7 @@ or (as of 2019-12-02)
 * Download [Dotnet Core 3.0.1 installer](https://dotnet.microsoft.com/download/dotnet-core/thank-you/sdk-3.0.101-windows-x64-installer)
 * Run it
 
-#### Linux
+#### Linux &amp; WSL
 
 ```bash
 $> sudo apt-get install dotnet-sdk-3.0
