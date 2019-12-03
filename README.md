@@ -56,7 +56,11 @@ $> dotnet run aoc <day_no> [<day_no> [<day_no>]]
 or, for every day so far:
 
 ```csharp
-$> dotnet run aoc *
+$> dotnet run aoc *      // On Windows only
+or
+$> dotnet run aoc -*
+or
+$> dotnet run aoc --all
 ```
 
 ## LINQPad stuff

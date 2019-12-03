@@ -15,7 +15,7 @@ namespace Shunty.AdventOfCode2019
             try
             {
                 var days = new List<int>();
-                if (args.Length > 1 && args[1] == "*") // Show all
+                if (args.Length > 1 && (args[1] == "*" || args[1] == "-*" || args[1] == "--all")) // Show all. Can't use '*' by itself on Linux. Doing do passes a directory listing to the program!
                 {
                     days.AddRange(Enumerable.Range(1, 25));
                 }
