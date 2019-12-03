@@ -42,7 +42,7 @@ Clone the repo.
 $> cd <project_root>
 ```
 
-To run code for current day:
+To run code for current day (if we're still in December):
 ```csharp
 $> dotnet run
 ```
@@ -53,5 +53,11 @@ or, to run code for a specific day(s):
 $> dotnet run aoc <day_no> [<day_no> [<day_no>]]
 ```
 
+or, for every day so far:
+
+```csharp
+$> dotnet run aoc *
+```
+
 ## LINQPad stuff
-*.linq files are [LINQPad](https://www.linqpad.net/) C# scripts. 
+*.linq files are [LINQPad](https://www.linqpad.net/) C# scripts.

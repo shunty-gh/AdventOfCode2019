@@ -14,37 +14,58 @@ namespace Shunty.AdventOfCode2019
 
             try
             {
-                var days = new List<string>();
-                if (args.Length <= 1)
+                var days = new List<int>();
+                if (args.Length > 1 && args[1] == "*") // Show all
+                {
+                    days.AddRange(Enumerable.Range(1, 25));
+                }
+                else if ((args.Length <= 1))
                 {
                     var dt = DateTime.Today;
                     // If during the AoC event period then default to the current day
                     if (dt.Year == 2019 && dt.Month == 12)
                     {
-                        days.Add(dt.Day.ToString());
+                        days.Add(dt.Day);
                     }
                     else
                     {
-                        // otherwise then just add day one
-                        days.Add("1");
+                        // otherwise just add day one
+                        days.Add(1);
                     }
                 }
                 else
                 {
-                    days.AddRange(args.Skip(1));
+                    foreach (var arg in args.Skip(1))
+                    {
+                        if (int.TryParse(arg, out var day) && day >= 1 && day <= 25)
+                            days.Add(day);
+                        else
+                            log.Warning("Invalid command line input {InvalidArg}. Ignoring it.", arg);
+                    }
                 }
 
                 foreach (var day in days)
                 {
-                    if (int.TryParse(day, out var dayno))
+
+                    var typ = Type.GetType($"Shunty.AdventOfCode2019.Day{day:D2}");
+                    if (typ != null)
                     {
-                        log.Debug("Attempting to run day {AoCDay}", dayno);
-                        var dayclass = (IAoCRunner)Activator.CreateInstance(Type.GetType($"Shunty.AdventOfCode2019.Day{dayno:D2}"));
+                        log.Debug("Attempting to run day {AoCDay}", day);
+                        var dayclass = (IAoCRunner)Activator.CreateInstance(typ);
                         dayclass.Run(log);
+                        Console.WriteLine();
                     }
                     else
                     {
-                        log.Warning("Invalid command line input {InvalidArg}. Ignoring it.", day);
+                        var dt = DateTime.Today;
+                        if (dt.Year == 2019 && dt.Month == 12 && day > dt.Day)
+                        {
+                            // Haven't got this far in the festive season yet. Do nothing.
+                        }
+                        else
+                        {
+                            log.Debug($"Code for day {day} does not exist.");
+                        }
                     }
                 }
             }
