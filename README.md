@@ -4,7 +4,7 @@ A bunch of samples to help solve the [Advent of code 2019](https://adventofcode.
 
 Including a massively over-engineered C# program (Dotnet Core 3 - but probably works with most versions so long as you change the `TargetFramework` attribute in `aoc.csproj`) to run each days code.
 
-As it's Dotnet Core it's cross platform so even the beardy Linux users can have a go :wink:
+As it's Dotnet Core it's cross platform so even beardy (other forms of facial hair are available) Linux users can have a go :wink:
 
 ## C# Stuff
 ### Install Dotnet Core
@@ -19,12 +19,12 @@ or (as of 2019-12-02)
 
 #### Windows
 
-* Download [Dotnet Core 3.0.1 installer](https://dotnet.microsoft.com/download/dotnet-core/thank-you/sdk-3.0.101-windows-x64-installer)
+* Download [Dotnet Core](https://dotnet.microsoft.com/download) SDK installer
 * Run it
 
 #### Linux &amp; WSL
 
-(Assuming you have done the one-time registration of the Microsoft key and feed as per the instructions above)
+(Assuming you have done the one-time registration of the Microsoft key and feed as per the installation instructions above)
 
 ```bash
 $> sudo apt-get install dotnet-sdk-3.0
@@ -34,13 +34,9 @@ $> sudo apt-get install dotnet-sdk-3.0
 
 * Dunno. Read the instructions.
 
-### Once Dotnet Core is installed
+#### Once Dotnet Core is installed
 
-Clone the repo.
-
-```bash
-$> cd <project_root>
-```
+Clone the repo and go to the repository root directory.
 
 To run code for current day (if we're still in December):
 ```csharp
@@ -61,6 +57,15 @@ or
 $> dotnet run aoc -*
 or
 $> dotnet run aoc --all
+```
+
+## Go stuff
+**Warning:** "Go" beginner alert.
+
+To run the Go samples from the repository root directory (where XX is 01, 02 etc):
+
+```go
+$> go run ./dayXX/dayXX.go
 ```
 
 ## LINQPad stuff
