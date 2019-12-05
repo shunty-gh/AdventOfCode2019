@@ -62,10 +62,11 @@ $> dotnet run aoc --all
 ## Go stuff
 **Warning:** "Go" beginner alert.
 
-To run the Go samples from the repository root directory (where XX is 01, 02 etc):
+To run the Go samples (where XX is 01, 02 etc):
 
 ```go
-$> go run ./dayXX/dayXX.go
+$> cd /<repo_root>/dayXX
+$> go run ./dayXX.go
 ```
 
 ## LINQPad stuff
