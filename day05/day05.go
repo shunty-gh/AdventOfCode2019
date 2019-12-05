@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	originalInput, err := inputAsIntArray(".\\day05-input.txt")
+	originalInput, err := inputAsIntArray("./day05-input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
