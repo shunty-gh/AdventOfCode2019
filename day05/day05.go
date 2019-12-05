@@ -74,28 +74,28 @@ func runProgram(program []int, input int) (result int, err error) {
 			skip = 2
 		case 4: // Output
 			lastoutput = v1
-			log.Println("Test result: ", v1)
+			//log.Println("Test result: ", v1)
 			skip = 2
-		case 5: // Jump if true
+		case 5: // Jump true
 			skip = 3
 			if v1 != 0 {
 				ip = v2
 				skip = 0
 			}
-		case 6: // Jump if false
+		case 6: // Jump false
 			skip = 3
 			if v1 == 0 {
 				ip = v2
 				skip = 0
 			}
-		case 7:
+		case 7: // <
 			if v1 < v2 {
 				program[p3] = 1
 			} else {
 				program[p3] = 0
 			}
 			skip = 4
-		case 8:
+		case 8: // ==
 			if v1 == v2 {
 				program[p3] = 1
 			} else {
