@@ -27,7 +27,7 @@ or (as of 2019-12-02)
 (Assuming you have done the one-time registration of the Microsoft key and feed as per the installation instructions above)
 
 ```bash
-$> sudo apt-get install dotnet-sdk-3.0
+$> sudo apt-get install dotnet-sdk-3.1
 ```
 
 #### Mac
