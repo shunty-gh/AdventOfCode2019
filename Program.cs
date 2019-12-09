@@ -44,6 +44,7 @@ namespace Shunty.AdventOfCode2019
                     }
                 }
 
+                //foreach (var day in new int[] {...})
                 foreach (var day in days)
                 {
 
