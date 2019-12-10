@@ -20,6 +20,7 @@ namespace Shunty.AdventOfCode2019
         {
             _log = log;
             Input = AocHelpers.GetDayLines(DayNumber).ToArray();
+            //Input = GetTestInput();  // p1 == 210; p2 == 802
             int y = 0;
             foreach (var line in Input)
             {
@@ -28,7 +29,8 @@ namespace Shunty.AdventOfCode2019
                 {
                     if (c == '#')
                     {
-                        Process(x, y);
+                        var cansee = Process(x, y, Input);
+                        visibles.Add((x, y), cansee);
                     }
                     x++;
                 }
@@ -38,19 +40,58 @@ namespace Shunty.AdventOfCode2019
             var stationlocation = visibles.OrderByDescending(v => v.Value.Count).First();
             var part1 = stationlocation.Value.Count();
             Console.WriteLine($"Part 1: {part1} at ({stationlocation.Key.X},{stationlocation.Key.Y})");
+
+            // Part 2
+            // Because the number of asteroids in sight is greater than our target of 200 then
+            // we'll not need to bother with a second pass of the laser.
+            // So this very abridged version will do:
+            var ast = stationlocation.Value.OrderBy(v => v.Angle).ToArray()[199];
+            var part2 = (ast.X * 100) + ast.Y;
+
+            // But I didn't twig until I'd written the whole processing loop... duh!
+
+            // visibles.Clear();
+            // int part2 = 0;
+            // int orgX = stationlocation.Key.X, orgY = stationlocation.Key.Y, destructionCount = 0;
+            // var p2input = Input.ToArray();
+            // var asteroids = stationlocation.Value;
+            // while (destructionCount < 200)
+            // {
+            //     // Remove each asteroid from the input then re-process the station location
+            //     var ordered = asteroids.OrderBy(a => a.Angle);
+            //     foreach (var asteroid in ordered)
+            //     {
+            //         destructionCount++;
+            //         if (destructionCount == 200)
+            //         {
+            //             part2 = (asteroid.X * 100) + asteroid.Y;
+            //             break;
+            //         }
+            //         var line = p2input[asteroid.Y];
+            //         var chs = line.ToCharArray();
+            //         chs[asteroid.X] = '-';
+            //         line = new string(chs);
+            //         p2input[asteroid.Y] = line;
+            //     }
+            //     asteroids = Process(orgX, orgY, p2input);
+            // }
+
+            Console.WriteLine($"Part 2: {part2}");
         }
 
-        private double Angle(int dx, int dy)
+        private double Angle(int x, int y, int x1, int y1)
         {
-            var result = Math.Atan2(dy, dx);
+            // For this puzzle we need 0° to be up the vertical, y axis, increasing upwards
+            // and angles to increase clockwise
+            // However our grid uses an upside down y axis with origin at top left
+
+            var dx = x1 - x;
+            var dy = y - y1;
+
+            var result = Math.Atan2(dx, dy);
             // Make sure we're dealing with +ve angles only
             if (result < 0)
                 result += (Math.PI * 2);
-            // But, for this puzzle we want 0 to be pointing up, so we need to subtract 90°
-            if (result >= (Math.PI / 2))
-                result -= (Math.PI / 2);
-            else
-                result += (Math.PI * 3 / 2);
             return result;
         }
 
@@ -64,7 +105,7 @@ namespace Shunty.AdventOfCode2019
 
         private Dictionary<(int X,int Y), List<(int X,int Y, double Angle)>> visibles = new Dictionary<(int X, int Y), List<(int X, int Y, double Angle)>>();
 
-        private void CheckPoint(char ch, int x, int y, int x1, int y1, IList<(int X, int Y, double Angle)> seen)
+        private void CheckPoint(char ch, int x, int y, int x1, int y1, IList<(int X, int Y, double Angle)> cansee)
         {
             if (ch != '#')
                 return;
@@ -77,28 +118,26 @@ namespace Shunty.AdventOfCode2019
                 var p = v.Where(vv => vv.X == x && vv.Y == y);
                 if (p.Count() > 0)
                 {
-                    seen.Add((x1,y1, Flip180(p.First().Angle)));
+                    cansee.Add((x1,y1, Flip180(p.First().Angle)));
                 }
             }
             else
             {
                 // Is there already something in the line of sight
-                var dx = x1 - x;
-                var dy = y1 - y;
-                var ang = Angle(dy, dx);
-                if (!seen.Any(i => i.Angle == ang))
+                var ang = Angle(x, y, x1, y1);
+                if (!cansee.Any(i => i.Angle == ang))
                 {
-                    seen.Add((x1, y1, ang));
+                    cansee.Add((x1, y1, ang));
                 }
             }
         }
 
-        private void Process(int x, int y)
+        private List<(int X, int Y, double Angle)> Process(int x, int y, string[] input)
         {
             var cansee = new List<(int X, int Y, double Angle)>();
             for (var y1 = y; y1 >= 0; y1--)
             {
-                var line = Input[y1];
+                var line = input[y1];
                 for (var x1 = x + 1; x1 < MaxX; x1++)
                 {
                     CheckPoint(line[x1], x, y, x1, y1, cansee);
@@ -107,7 +146,7 @@ namespace Shunty.AdventOfCode2019
 
             for (var y1 = y - 1; y1 >= 0; y1--)
             {
-                var line = Input[y1];
+                var line = input[y1];
                 for (var x1 = x; x1 >= 0; x1--)
                 {
                     CheckPoint(line[x1], x, y, x1, y1, cansee);
@@ -116,7 +155,7 @@ namespace Shunty.AdventOfCode2019
 
             for (var y1 = y; y1 < MaxY; y1++)
             {
-                var line = Input[y1];
+                var line = input[y1];
                 for (var x1 = x - 1; x1 >= 0; x1--)
                 {
                     CheckPoint(line[x1], x, y, x1, y1, cansee);
@@ -125,14 +164,40 @@ namespace Shunty.AdventOfCode2019
 
             for (var y1 = y + 1; y1 < MaxY; y1++)
             {
-                var line = Input[y1];
+                var line = input[y1];
                 for (var x1 = x; x1 < MaxX; x1++)
                 {
                     CheckPoint(line[x1], x, y, x1, y1, cansee);
                 }
             }
 
-            visibles.Add((x,y), cansee);
+            return cansee;
+        }
+
+        private string[] GetTestInput()
+        {
+            return new string[] {
+                ".#..##.###...#######",
+                "##.############..##.",
+                ".#.######.########.#",
+                ".###.#######.####.#.",
+                "#####.##.#.##.###.##",
+                "..#####..#.#########",
+                "####################",
+                "#.####....###.#.#.##",
+                "##.#################",
+                "#####.##.###..####..",
+                "..######..##.#######",
+                "####.##.####...##..#",
+                ".#####..#.######.###",
+                "##...#.##########...",
+                "#.##########.#######",
+                ".####.#.###.###.#.##",
+                "....##.##.###..#####",
+                ".#.#.###########.###",
+                "#.#.#.#####.####.###",
+                "###.##.####.##.#..##",
+            };
         }
     }
 }
