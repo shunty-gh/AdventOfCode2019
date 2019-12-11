@@ -19,66 +19,50 @@ namespace Shunty.AdventOfCode2019
                 .Select(s => Int64.Parse(s))
                 .ToArray();
 
+
+            var part1 = ProcessInput(input.ToArray(), 0);
+            Console.WriteLine($"Part 1: {part1.Count}");
+            
+            var part2 = ProcessInput(input.ToArray(), 1);
+            Console.WriteLine($"Part 2 (fixed font required): ");
+            DrawRegistration(part2);
+        }
+ 
+        private Dictionary<(int X, int Y), (int X, int Y, int Count, int Colour)> ProcessInput(Int64[] program, int initialInput)
+        {
             ConcurrentQueue<Int64> inQ = new ConcurrentQueue<Int64>(), outQ = new ConcurrentQueue<Int64>();
-            var t = Task.Factory.StartNew(() => IntcodeCompute(input.ToArray(), inQ, outQ));
-            var map = new Dictionary<(int X, int Y), (int Count, int Colour)>();
+            var t = Task.Factory.StartNew(() => IntcodeCompute(program, inQ, outQ));
+            var map = new Dictionary<(int X, int Y), (int X, int Y, int Count, int Colour)>();
             (int X, int Y) current = (0, 0);
             var facing = 0;  // [^,>,v,<]
-            inQ.Enqueue(0);
+            inQ.Enqueue(initialInput);
             while (!t.IsCompleted)
             {
                 while (outQ.TryDequeue(out var colour))
                 {
                     // Set the colour for the location
+                    var count = 1;
                     if (map.ContainsKey(current))
                     {
-                        var item = map[current];
-                        map[current] = (item.Count + 1, (int)colour);
+                        count += map[current].Count;
                     }
-                    else
-                    {
-                        map[current] = (1, (int)colour);
-                    }
+                    map[current] = (current.X, current.Y, count, (int)colour);
 
                     // Wait for a new direction
-                    var done = false;
-                    Int64 direction = 0;
-                    while (!outQ.TryDequeue(out direction))
-                    {
-                        done = t.IsCompleted;
-                    }
+                    Int64 direction = -1;
+                    while (!outQ.TryDequeue(out direction) && !t.IsCompleted) {}
 
-                    if (!done)
+                    if (direction >= 0)
                     {
-                        // Move on
-                        switch ((int)direction)
-                        {
-                            case 0:  // left
-                                facing = (facing + 3) % 4;
-                                break;
-                            case 1:  // right
-                                facing = (facing + 1) % 4;
-                                break;
-                            default:
-                                throw new Exception($"Unknown direction instruction {direction} while at ({current.X},{current.Y})");
-                        }
-                        switch (facing)
-                        {
-                            case 0: // up
-                                current = (current.X, current.Y - 1);
-                                break;
-                            case 1: // right
-                                current = (current.X + 1, current.Y);
-                                break;
-                            case 2: // down
-                                current = (current.X, current.Y + 1);
-                                break;
-                            case 3: // left
-                                current = (current.X - 1, current.Y);
-                                break;
-                            default:
-                                throw new Exception($"Unknown facing direction {facing} while at ({current.X},{current.Y})");
-                        }
+                        // Move on    (  [^,>,v,<]  0 == Left; 1 == Right )
+                        facing = direction == 0 
+                            ? (facing + 3) % 4
+                            : (facing + 1) % 4;
+
+                        var moves = new (int X, int Y)[] { (0,-1), (1,0), (0,1), (-1,0) }; // Using grid where y increases downwards
+                        var move = moves[facing];
+                        current = (current.X + move.X, current.Y + move.Y);
+
                         // Put the current colour into the queue
                         if (!t.IsCompleted)
                         {
@@ -90,10 +74,32 @@ namespace Shunty.AdventOfCode2019
                     }
                 }
             }
-
-            Console.WriteLine($"Part 1: {map.Count}");
+            return map;
         }
- 
+
+        private void DrawRegistration(Dictionary<(int X, int Y), (int X, int Y, int Count, int Colour)> map)
+        {
+            Console.WriteLine("");
+            int minY = map.Min(p => p.Value.Y), maxY = map.Max(p => p.Value.Y);
+            int minX = map.Min(p => p.Value.X), maxX = map.Max(p => p.Value.X);
+            for (var y = minY; y <= maxY; y++)
+            {
+                for (var x = minX; x <= maxX; x++)
+                {
+                    if (map.ContainsKey((x,y)))
+                    {
+                        var panel = map[(x,y)];
+                        Console.Write(panel.Colour == 1 ? "##" : "  ");
+                    }
+                    else
+                    {
+                        Console.Write("  ");
+                    }
+                }
+                Console.WriteLine("");
+            }
+        }
+
          private Int64 ResizeProgram(ref Int64[] program, Int64 newSize)
         {
             Array.Resize(ref program, (int)newSize);
