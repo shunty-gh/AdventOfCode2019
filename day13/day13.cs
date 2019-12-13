@@ -1,3 +1,9 @@
+// Define SHOW_GAMEBOARD if running in a normal shell/console window
+// and you want to see the game being played in clunky ASCII.
+// Leave it undefined for a speedier result or if running from
+// within the VS/VSCode debugger/console.
+//#define SHOW_GAMEBOARD
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -6,14 +12,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Serilog;
 
+
 namespace Shunty.AdventOfCode2019
 {
     public struct Location
     {
-        public int X;
-        public int Y;
+        public Int64 X;
+        public Int64 Y;
 
-        public Location(int x, int y)
+        public Location(Int64 x, Int64 y)
         {
             X = x;
             Y = y;
@@ -22,9 +29,9 @@ namespace Shunty.AdventOfCode2019
 
     public class Tile
     {
-        public int X { get; set; } = 0;
-        public int Y { get; set; } = 0;
-        public int Id { get; set; } = 0;
+        public Int64 X { get; set; } = 0;
+        public Int64 Y { get; set; } = 0;
+        public Int64 Id { get; set; } = 0;
     }
 
     public class Day13 : IAoCRunner
@@ -35,6 +42,10 @@ namespace Shunty.AdventOfCode2019
         const int Paddle = 3;
         const int Ball = 4;
 
+        // Set this to true to see a running update of the score
+        // when no showing the full game window
+        private bool ShowScoreUpdates = false;
+
         private static readonly int DayNumber = 13;
 
         public void Run(ILogger log)
@@ -44,36 +55,189 @@ namespace Shunty.AdventOfCode2019
                 .Select(s => Int64.Parse(s))
                 .ToArray();
 
-            ConcurrentQueue<Int64> inQ = new ConcurrentQueue<Int64>(), outQ = new ConcurrentQueue<Int64>();
-            var t = Task.Factory.StartNew(() => IntcodeCompute(input.ToArray(), inQ, outQ));
             var map = new Dictionary<Location, Tile>();
-            while (!t.IsCompleted || outQ.Count() > 0)
-            {
-                // Get 3 values from the queue
-                Int64 x = 0, y = 0, id = 0;
-                while (!outQ.TryDequeue(out x))
-                {}
-                while (!outQ.TryDequeue(out y))
-                {}
-                while (!outQ.TryDequeue(out id))
-                {}
-
-                var key = new Location((int)x, (int)y);
-                if (map.ContainsKey(key))
-                {
-                    var tile = map[key];
-                    tile.Id = (int)id;
-                }
-                else
-                {
-                    map[key] = new Tile { X = (int)x, Y = (int)y, Id = (int)id };
-                }
-            }
-
+            var program = input.ToArray();
+            RunGame(program, map);
             var grouped = map.GroupBy(m => m.Value.Id).Select(g => (g.Key, g.Count())).OrderBy(g => g.Key).ToList();
             log.Debug("Tile types: {@TileTypes}", grouped);
             var part1 = map.Count(kvp => kvp.Value.Id == Block);
+
+            map.Clear();
+            program = input.ToArray();
+            program[0] = 2;
+            var part2 = RunGame(program, map);
+
+            Console.WriteLine("");
             Console.WriteLine($"Part 1: {part1}");
+            Console.WriteLine($"Part 2: {part2}");
+        }
+
+        private Int64 RunGame(Int64[] program, Dictionary<Location, Tile> map)
+        {
+            ConcurrentQueue<Int64> inQ = new ConcurrentQueue<Int64>(), outQ = new ConcurrentQueue<Int64>();
+            Int64 score = 0, paddleX = -1;
+
+            InitGameBoard();
+            InitScoreboard();
+            var t = Task.Factory.StartNew(() => IntcodeCompute(program, inQ, outQ));
+            int blockCount = 0;
+            score = 0;
+            try
+            {
+                while (!t.IsCompleted || outQ.Count() > 0)
+                {
+                    // Get 3 values from the queue
+                    Int64 x = 0, y = 0, id = 0;
+                    while (!outQ.TryDequeue(out x))
+                    {}
+                    while (!outQ.TryDequeue(out y))
+                    {}
+                    while (!outQ.TryDequeue(out id))
+                    {}
+
+                    if (x == -1 && y == 0)
+                    {
+                        score = id;
+                        UpdateScore(score, blockCount);
+                        if (blockCount == 0)
+                            break;
+
+                        continue;
+                    }
+
+                    if (id == Paddle)
+                    {
+                        if (paddleX < 0)
+                        {
+                            inQ.Enqueue(-1);
+                        }
+                        paddleX = x;
+                    }
+                    else if (id == Ball)
+                    {
+                        if (paddleX >= 0)
+                        {
+                            // Try and track the ball with the paddle
+                            if (x < paddleX)
+                                inQ.Enqueue(-1);
+                            else if (x > paddleX)
+                                inQ.Enqueue(1);
+                            else
+                                inQ.Enqueue(0);
+                        }
+                    }
+
+                    var key = new Location(x, y);
+                    Tile tile;
+                    var delay = 10;
+                    if (map.ContainsKey(key))
+                    {
+                        tile = map[key];
+                        if (tile.Id == Block && id != Block)
+                            blockCount--;
+                        else if (tile.Id != Block && id == Block)
+                            blockCount++;
+
+                        tile.Id = id;
+                    }
+                    else
+                    {
+                        if (id == Block)
+                            blockCount++;
+                        tile = new Tile { X = x, Y = y, Id = id };
+                        map[key] = tile;
+                        delay = 0;
+                    }
+
+#if SHOW_GAMEBOARD
+                    DrawTile(tile);
+                    // Delay it a little
+                    Thread.Sleep(delay);
+#endif
+                }
+
+                return score;
+            }
+            finally
+            {
+                ResetScreen();
+            }
+        }
+
+        private void DrawTile(Tile tile)
+        {
+#if !SHOW_GAMEBOARD
+            return;
+#else
+            string s = "";
+            switch ((int)tile.Id)
+            {
+                case Empty:
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    s = " ";
+                    break;
+                case Wall:
+                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                    s = tile.X == 0 ? "▌" : "▐"; //"█";
+                    break;
+                case Block:
+                    Console.ForegroundColor = ConsoleColor.DarkBlue;
+                    s = "░";
+                    break;
+                case Paddle:
+                    Console.ForegroundColor = ConsoleColor.Blue;
+                    s = "▀";
+                    break;
+                case Ball:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    s = "■";
+                    break;
+                default:
+                    return;
+            }
+            Console.SetCursorPosition((int)tile.X, (int)tile.Y);
+            Console.Write(s);
+#endif
+        }
+
+#if SHOW_GAMEBOARD
+        private int cursorTop = 0;
+        private ConsoleColor orgFG = ConsoleColor.White;
+        private ConsoleColor orgBG = ConsoleColor.Black;
+#endif
+        private void InitGameBoard()
+        {
+#if SHOW_GAMEBOARD
+            cursorTop = Console.CursorTop;
+            orgFG = Console.ForegroundColor;
+            orgBG = Console.BackgroundColor;
+            Console.Clear();
+#endif
+        }
+
+        private void ResetScreen()
+        {
+#if SHOW_GAMEBOARD
+            Console.ForegroundColor = orgFG;
+            Console.BackgroundColor = orgBG;
+            Console.SetCursorPosition(0, cursorTop);
+            Console.ResetColor();
+#endif
+        }
+        private void InitScoreboard()
+        {
+        }
+        private void UpdateScore(Int64 score, int blockCount)
+        {
+#if SHOW_GAMEBOARD
+            var h = Console.WindowHeight;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.SetCursorPosition(0, 26);
+            Console.Write($"Score: {score:#,##0};    Blocks: {blockCount:#,##0}  ");
+#else
+            if (ShowScoreUpdates)
+                Console.WriteLine($"Score: {score}; Blocks: {blockCount}");
+#endif
         }
 
         private Int64 ResizeProgram(ref Int64[] program, Int64 newSize)
