@@ -16,6 +16,7 @@ namespace Shunty.AdventOfCode2019
         public List<(Point Path, int Direction)> Path { get; } = new List<(Point, int)>();
         public int PathCount => Path.Count;
         public char Status { get; set; } = ' ';
+        public bool Oxygenated { get; set; } = false;
 
         public bool IsWall => Status == 'W';
         public int X => GridRef.X;
@@ -114,6 +115,9 @@ namespace Shunty.AdventOfCode2019
                             map[gr] = current;
                         }
                         log.Debug("Found oxygen system at {@OSPos}. Path length: {PathLen} MinX: {MinX}; MinY: {MinY}; MaxX: {MaxX}; MaxY: {MaxY}", current.GridRef, current.PathCount, map.Min(kvp => kvp.Key.X), map.Min(kvp => kvp.Key.Y), map.Max(kvp => kvp.Key.X), map.Max(kvp => kvp.Key.Y));
+                        // Technically we should do a "shortest path to point" kind of thing now
+                        // but in this case we don't need to.
+                        Console.WriteLine($"Part 1: {current.PathCount}");
                         break;
                     default:
                         throw new Exception($"Unknown status returned: {status}");
@@ -125,15 +129,15 @@ namespace Shunty.AdventOfCode2019
                     var next = new Point(current.X + directions[nextdirection].dX, current.Y + directions[nextdirection].dY);
                     if (map.ContainsKey(next))
                     {
-                        var nx = map[next];
-                        if (nx.IsWall)
-                            continue;
-                        var p = nx.Path;
-                        if (p.Count < current.PathCount - 1)
-                        {
-                            p.Add((current.GridRef, direction));
-                            current.UpdatePath(p);
-                        }
+                        // var nx = map[next];
+                        // if (nx.IsWall)
+                        //     continue;
+                        // var p = nx.Path;
+                        // if (p.Count < current.PathCount - 1)
+                        // {
+                        //     p.Add((current.GridRef, direction));
+                        //     current.UpdatePath(p);
+                        // }
                     }
                     else
                     {
@@ -160,7 +164,39 @@ namespace Shunty.AdventOfCode2019
                 }
             }
 
-            DrawMap(map);
+            //DrawMap(map);
+
+            var tofill = new List<GridLocation>();
+            var mins = 0;
+            var start = map.First(k => k.Value.Status == 'O').Value;
+            tofill.Add(start);
+            var empty = map.Count(m => m.Value.Status == ' ');
+            while (tofill.Count > 0)
+            {
+                mins++;
+                var newfills = new List<GridLocation>();
+                foreach (var fill in tofill)
+                {
+                    foreach (var d in directions.Skip(1))
+                    {
+                        var p = new Point(fill.X + d.dX, fill.Y + d.dY);
+                        if (map.ContainsKey(p))
+                        {
+                            var f = map[p];
+                            if (f.Status == ' ' && !f.Oxygenated)
+                            {
+                                f.Oxygenated = true;
+                                empty--;
+                                newfills.Add(f);
+                            }
+                        }
+                    }
+                }
+                tofill = newfills;
+                if (empty == 0)
+                    break;
+            }
+            Console.WriteLine($"Part 2: {mins}");
         }
 
         private void DrawMap(Dictionary<Point, GridLocation> map)
