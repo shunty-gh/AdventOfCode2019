@@ -44,8 +44,8 @@ namespace Shunty.AdventOfCode2019
                     }
                 }
 
-                //foreach (var day in new int[] {...})
-                foreach (var day in days)
+                foreach (var day in new int[] {15})
+                //foreach (var day in days)
                 {
 
                     var typ = Type.GetType($"Shunty.AdventOfCode2019.Day{day:D2}");
