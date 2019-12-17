@@ -127,30 +127,34 @@ namespace Shunty.AdventOfCode2019
                 for (var nextdirection = 1; nextdirection <=4; nextdirection++)
                 {
                     var next = new Point(current.X + directions[nextdirection].dX, current.Y + directions[nextdirection].dY);
-                    if (map.ContainsKey(next))
-                    {
-                        // var nx = map[next];
-                        // if (nx.IsWall)
-                        //     continue;
-                        // var p = nx.Path;
-                        // if (p.Count < current.PathCount - 1)
-                        // {
-                        //     p.Add((current.GridRef, direction));
-                        //     current.UpdatePath(p);
-                        // }
-                    }
-                    else
+                    if (!map.ContainsKey(next))
                     {
                         backtrack = false;
                         direction = nextdirection;
                         break;
                     }
+                    // else
+                    // {
+                    //     // Could (should?) check for shortest path to point
+                    //     // but we don't really need it in this instance.
+
+                    //     var nx = map[next];
+                    //     if (nx.IsWall)
+                    //         continue;
+                    //     var p = nx.Path;
+                    //     if (p.Count < current.PathCount - 1)
+                    //     {
+                    //         p.Add((current.GridRef, direction));
+                    //         current.UpdatePath(p);
+                    //     }
+                    // }
                 }
 
                 if (backtrack)
                 {
                     if (path.Count == 0)
                     {
+                        // We've seen it all
                         inQ.Enqueue(99);
                         break;
                     }
