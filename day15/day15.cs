@@ -211,7 +211,7 @@ namespace Shunty.AdventOfCode2019
             int maxY = map.Max(p => p.Key.Y);
 
             Console.WriteLine("");
-            for (var y = minY; y <= maxY; y++)
+            for (var y = maxY; y <= minY; y--)
             {
                 for (var x = minX; x <= maxX; x++)
                 {
