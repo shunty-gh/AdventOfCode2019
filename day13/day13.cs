@@ -129,7 +129,9 @@ namespace Shunty.AdventOfCode2019
 
                     var key = new Location(x, y);
                     Tile tile;
+#if SHOW_GAMEBOARD
                     var delay = 10;
+#endif
                     if (map.ContainsKey(key))
                     {
                         tile = map[key];
@@ -146,7 +148,9 @@ namespace Shunty.AdventOfCode2019
                             blockCount++;
                         tile = new Tile { X = x, Y = y, Id = id };
                         map[key] = tile;
+#if SHOW_GAMEBOARD
                         delay = 0;
+#endif
                     }
 
 #if SHOW_GAMEBOARD
