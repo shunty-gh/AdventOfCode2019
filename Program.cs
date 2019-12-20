@@ -44,11 +44,14 @@ namespace Shunty.AdventOfCode2019
                     }
                 }
 
-                //foreach (var day in new int[] {15})
+                //foreach (var day in new int[] {18})
                 foreach (var day in days)
                 {
 
                     var typ = Type.GetType($"Shunty.AdventOfCode2019.Day{day:D2}");
+                    // Allow for sub-namespace
+                    if (typ == null)
+                        typ = Type.GetType($"Shunty.AdventOfCode2019.Day{day:D2}.Day{day:D2}");
                     if (typ != null)
                     {
                         log.Debug("Attempting to run day {AoCDay}", day);
