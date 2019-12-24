@@ -29,7 +29,7 @@ namespace Shunty.AdventOfCode2019
         {
             // No need to read the output queue we only want the final answer
             var computer = new Intcode();
-            Int64 count = 0, state = 0;
+            Int64 count = 0;
             for (var y = 0; y < 50; y++)
             {
                 for (var x = 0; x < 50; x++)
