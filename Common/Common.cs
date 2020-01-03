@@ -7,11 +7,16 @@ namespace Shunty.AdventOfCode2019
 {
     public static class AocHelpers
     {
+        public static string DayPath(int day)
+        {
+            return $"day{day:D2}";
+        }
+
         public static IList<string> GetDayLines(int day, int part = 0)
         {
             var parttxt = part > 0 ? $"-part{part}" : "";
             var fname = $"day{day:D2}{parttxt}-input.txt";
-            var inputname = Path.Combine($"day{day:D2}", fname);
+            var inputname = Path.Combine(DayPath(day), fname);
 
             var result = File.ReadAllLines(inputname)
                 .ToList();

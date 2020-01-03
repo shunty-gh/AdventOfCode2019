@@ -86,11 +86,11 @@ namespace Shunty.AdventOfCode2019
                         }
                     }
                 }
-                
+
                 thisround.Clear();
                 thisround.AddRange(nextround);
                 nextround.Clear();
-                
+
             }
             log.Debug("Ores {@Ores}", ores);
             Int64 orerequired = 0;
@@ -105,8 +105,10 @@ namespace Shunty.AdventOfCode2019
             var target = 1_000_000_000_000;
             if (orerequired > target)
                 Console.Write("Too high");
-            
+
             Console.WriteLine($"Part 1: {orerequired}");
+
+            Console.WriteLine("For part 2 I just did a trial and error 'guess too high'/'guess too low' binary search by hand but didn't bother to program it.");
         }
 
         private string[] GetTestInput1()
@@ -176,7 +178,7 @@ namespace Shunty.AdventOfCode2019
            };
 
        }
-         
+
     }
 
     public class Reaction
