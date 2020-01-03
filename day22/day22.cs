@@ -114,7 +114,7 @@ namespace Shunty.AdventOfCode2019
             return result;
 
             // This can also be done as follows, but it takes a bit more
-            // mental agility
+            // mental agility which I haven't quite fathomed yet.
             //var x = mul(b, pow(a-1, m-2));  // == (ax+b)^-shuffles   (I think)
             //return add(-x, mul(add(x, target), pow(pow(a, m-2), shuffles)));
         }
@@ -184,6 +184,7 @@ namespace Shunty.AdventOfCode2019
             return result;
         }
 
+        // https://en.wikipedia.org/wiki/Modular_exponentiation#Pseudocode
         private static Int64 modPower(Int64 a, Int64 b, Int64 m)
         {
             var result = 1L;

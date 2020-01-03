@@ -85,10 +85,31 @@ public Int64 Part2(IEnumerable<string> input)
     Console.WriteLine($"A: {a}; B: {b}");
 
     var target = 2020;
-    //var x = mul(b, pow(a-1, m-2));
+    
+    // Now we have a and b we need to apply it many times.
+    // This turns out to be a geomteric series and
+    // https://codeforces.com/blog/entry/72593
+    // https://en.wikipedia.org/wiki/Geometric_progression#Geometric_series
+    // shows this sum to be equivalent to a^kx + b(1-a^k)/(1-a) mod m
+    // which we turn into aax + bb using the modular inverse of 
+    //   1/(1-a) = pow(1-a, m-2)
+    // This gives us:
+    var aa = pow(a, shuffles);
+    var bb = mul(add(b, mul(-b, aa)), pow(1-a, m-2));
+    
+    // We can now re-arrange the formula x1 = aax + bb to give us
+    //   x = (x1 - bb) / aa  where x1 is our target entry of 2020
+    // and another application of the modular inverse of 
+    //   1/aa = pow(aa, m-2)
+    // give
+    var result = mul(add(target, -bb), pow(aa, m-2));
+    return result;
+
+    // This can also be done as follows, but it takes a bit more
+    // mental agility
+    //var x = mul(b, pow(a-1, m-2));  // == (ax+b)^-shuffles   (I think)
     //return add(-x, mul(add(x, target), pow(pow(a, m-2), shuffles)));
-    var x = mul(b, pow(1-a, m - 2));
-    return add(x, mul(add(-x, target), pow(pow(a, m - 2), shuffles)));
+
 }
 
 public (Int64 a, Int64 b) ProcessInput(IEnumerable<string> input, Int64 m)
