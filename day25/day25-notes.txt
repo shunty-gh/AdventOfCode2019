@@ -1,0 +1,96 @@
+Items:
+  klein bottle
+  loom
+  mutex
+  pointer
+  polygon
+  hypercube
+  mug
+  manifold
+  
+Don't take:
+  molten lava
+  giant electromagnet
+  infinite loop
+  escape pod
+  photons
+--------------------
+< poly, hc, mug, mani
+< hc, mug, mani
+< poly, mug, mani
+< poly, hc, mani
+> poly, hc, mug
+> poly, hc, mug, kb
+
+--------------------
+== Title ==
+Description......
+
+Doors here lead:
+- north
+...
+
+Items here:
+- giant electromagnet
+
+Command?
+--------------------
+You can't go that way.
+--------------------
+Unrecognized command.
+--------------------
+== Pressure-Sensitive Floor ==
+Analyzing...
+
+Doors here lead:
+- east
+
+A loud, robotic voice says "Alert! Droids on this ship are heavier than the detected value!" and you are ejected back to the checkpoint.
+
+
+
+== Security Checkpoint ==
+In the next room, a pressure-sensitive floor will verify your identity.
+
+Doors here lead:
+- east
+- west
+
+Command?
+--------------------
+You take the ....
+
+Command?
+--------------------
+... You can't move !!
+--------------------
+
+
+O : Hull Breach : : [n,s,w] (0,0)
+w : Crew Quarters : giant electromagnet : [e] (-1,0)
+e : O (0,0)
+n : Arcade : molten lava : [s] (0,1)
+s : O (0,0)
+s : Engineering : mutex : [n,e,s] (0,-1)     
+    s : Storage : manifold : [n,e,w]
+	e : Corridor : : [w]
+	w : Storage
+	w : Hot Chocolate Fountain : infinite loop : [e,s,w]
+	s : Gift Wrapping Center : : [n]
+	n : Hot choc
+	w : Passages : klein bottle : [e]
+	e : Hot choc
+	
+e : Navigation : mug : [e,w] (1,-1)
+e : Holodeck : polygon : [n,e,w] (2,-1)
+n : Science Lab : loom : [n,s] (2,0)
+n : Kitchen : hypercube : [s] (2,1)
+s : Science Lab (2,0)
+s : Holodeck (2,-1)
+e : Warp Drive Maintenance : : [e,w] (3,-1)
+e : Stables : escape pod : [n,e,w] (4,-1)
+n : Sick Bay : photons : [s] (4,0)
+s : Stables (4,-1)
+e : Observatory : pointer : [s,w] (5,-1)
+s : Hallway : : [n,w] (5,-2)
+w : Security Checkpoint : : [e,w] (4,-2)   "In the next room, a pressure-sensitive floor will verify your identity."
