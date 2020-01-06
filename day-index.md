@@ -10,8 +10,11 @@ So that I can find specific types of approach if I ever need them again.
 * [Tutorial for day 22](https://codeforces.com/blog/entry/72593)
 
 ### Other People's Solutions
+Some of which, maybe, I might have had a wee peek at when I got stuck (but not before at least 24 hours of thinking).
+
 | URL                                      | Language(s) |
 |------------------------------------------|----------|
+| https://github.com/Bogdanp/awesome-advent-of-code | Many, many... |
 | https://github.com/orez-/Advent-of-Code-2019 | Python |
 | https://github.com/KanegaeGabriel/advent-of-code-2019 | Python |
 | https://github.com/Starwort/advent-of-code-2019 | Python |
