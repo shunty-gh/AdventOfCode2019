@@ -90,7 +90,8 @@ Program the `IntCode` machine to use logical AND OR NOT to guide a jumping robot
 The big, nasty, modular arithmetic one. Combining linear functions. Multiplicative inverse modulo m and all that.
 
 ### Day 23 - Category Six
-Use the `IntCode` program to send network packets back and forth between `IntCode` instances. Used threading here but that probably made it harder (and, most likely, slower) in the log run.
+Use the `IntCode` program to send 'network packets' back and forth between 50 `IntCode` instances.   
+Used threading here but that probably made it harder (and, most likely, slower) in the log run. The Go version, with channels and go routines is fast but the C# version is very slow due to some messed up threading.
 
 ### Day 24 - Planet of Discord
 Basic Game of life in part 1 but then extended to recursive levels within levels for part 2
