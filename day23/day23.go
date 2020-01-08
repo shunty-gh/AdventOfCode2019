@@ -16,36 +16,36 @@ type network struct {
 }
 
 type networkPacket struct {
-	Address, X, Y int64
+	Sender, Recipient int
+	X, Y              int64
 }
 
 type natEvent func(x int64, y int64)
 
 const natAddress = 255
 
+func (net *network) allPCsIdle() bool {
+	pcs := net.PCs
+	for pci := 0; pci < 50; pci++ {
+		if pcs[pci] == nil {
+			return false
+		}
+		if !pcs[pci].WaitingForInput {
+			return false
+		}
+	}
+	return true
+}
+
 func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSend natEvent) network {
 	net := network{PCs: make([]*intcode.PC, pcCount), PacketQ: make(chan networkPacket, 1024)}
-	natX, natY := int64(0), int64(0)
-
-	// Read (continuously) from the networkPacket queue(channel) and
-	// dispatch to other machines appropriately
-	go func(lan network) {
-		q := lan.PacketQ
-		for {
-			pk := <-q // Ok to block here. Can't do anything if we don't have a packet to dispatch.
-			addr := int(pk.Address)
-			if addr == natAddress {
-				natX, natY = pk.X, pk.Y
-				onNatReceive(pk.X, pk.Y)
-			} else {
-				//log.Printf("Dispatch msg to %d. X: %d; Y: %d", addr, pk.X, pk.Y)
-				lan.PCs[addr].Enqueue(pk.X)
-				lan.PCs[addr].Enqueue(pk.Y)
-			}
-		}
-	}(net)
 
 	// Create all the intcode pcs
+	// For each one:
+	//   * create a queue/channel reader to convert the ouput into
+	//     network packets without blocking the pc.
+	//   * Start each one running
+	//   * Set it's Id/address
 	for i := 0; i < pcCount; i++ {
 		pc := intcode.PC{InQ: make(chan int64), OutQ: make(chan int64)}
 		net.PCs[i] = &pc
@@ -53,7 +53,7 @@ func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSen
 		// Read from the pc output queue/channel and when
 		// we have three items send them, as a complete networkPacket,
 		// to the network packet queue(channel)
-		go func(pcQ chan int64, packetQ chan networkPacket) {
+		go func(pcQ chan int64, packetQ chan networkPacket, pcId int) {
 			packetindex := 0
 			packetbuilder := make([]int64, 3)
 
@@ -64,9 +64,10 @@ func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSen
 					packetindex++
 					if packetindex == 3 {
 						pk := networkPacket{
-							Address: packetbuilder[0],
-							X:       packetbuilder[1],
-							Y:       packetbuilder[2],
+							Sender:    pcId,
+							Recipient: int(packetbuilder[0]),
+							X:         packetbuilder[1],
+							Y:         packetbuilder[2],
 						}
 						packetQ <- pk
 						packetindex = 0
@@ -76,7 +77,7 @@ func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSen
 					time.Sleep(1 * time.Millisecond)
 				}
 			}
-		}(pc.OutQ, net.PacketQ)
+		}(pc.OutQ, net.PacketQ, i)
 
 		// Run each pc in it's own Go routine
 		go pc.RunProgram(program)
@@ -84,33 +85,54 @@ func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSen
 		pc.Enqueue(int64(i))
 	}
 
-	// Monitor the network
+	// Manage/Process the network
+	//
+	// Read (continuously) from the networkPacket queue(channel) and
+	// dispatch to other machines appropriately.
+	// If there is no network packet available check the network to
+	// see if all the machines are waiting/idle.
 	go func(lan network) {
+		natX, natY := int64(0), int64(0)
+		q := lan.PacketQ
 		idlecount := 0
+
 		for {
-			if allPCsIdle(lan.PCs) {
-				idlecount++
-				// We must wait enough time for the network to "settle".
-				// idlecount > 2 with a sleep time of between 2-5ms seems to achieve that - may
-				// need different values on different hardware. Maybe.
-				// However... approx 1 in 10 runs part2 gets an incorrect answer
-				if idlecount > 2 && !(natX == 0 && natY == 0) {
-					idlecount = 0
-					// Send the most recent NAT values to address 0
-					onNatSend(natX, natY)
-					lan.PCs[0].Enqueue(natX)
-					lan.PCs[0].Enqueue(natY)
-					natX, natY = 0, 0 // Reset so that we don't send the same value without having received them first
+			select {
+			case pk := <-q: // Don't block. 'cos if there's nothing on the channel we want to run the network monitoring
+				// Process the received packet
+				addr := pk.Recipient
+				if addr == natAddress {
+					natX, natY = pk.X, pk.Y
+					onNatReceive(pk.X, pk.Y)
 				} else {
-					// Poke each pc by sending it -1
-					for pci := 0; pci < pcCount; pci++ {
-						lan.PCs[pci].Enqueue(-1)
-					}
+					//log.Printf("Dispatch msg from %d to %d. X: %d; Y: %d", pk.Sender, addr, pk.X, pk.Y)
+					lan.PCs[addr].Enqueue(pk.X)
+					lan.PCs[addr].Enqueue(pk.Y)
 				}
-			} else {
-				idlecount = 0
+			default:
+				// Monitor the network
+				if lan.allPCsIdle() {
+					idlecount++
+					// We must wait enough time for the network to "settle".
+					// Just 1 extra loop through seems to work
+					if idlecount > 1 && !(natX == 0 && natY == 0) {
+						idlecount = 0
+						// Send the most recent NAT values to address 0
+						onNatSend(natX, natY)
+						lan.PCs[0].Enqueue(natX)
+						lan.PCs[0].Enqueue(natY)
+						natX, natY = 0, 0 // Reset so that we don't send the same value without having received them first
+					} else {
+						// Poke each pc by sending it -1
+						for pci := 0; pci < pcCount; pci++ {
+							lan.PCs[pci].Enqueue(-1)
+						}
+					}
+				} else {
+					idlecount = 0
+				}
 			}
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(1 * time.Millisecond)
 		}
 	}(net)
 
@@ -155,13 +177,4 @@ func main() {
 
 	//fmt.Println("Part 1: ", part1)
 	//fmt.Println("Part 2: ", part2)
-}
-
-func allPCsIdle(pcs []*intcode.PC) bool {
-	for pci := 0; pci < 50; pci++ {
-		if !pcs[pci].WaitingForInput {
-			return false
-		}
-	}
-	return true
 }
