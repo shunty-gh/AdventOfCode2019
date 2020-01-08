@@ -5,9 +5,117 @@ import (
 	"log"
 	"os"
 	"path"
+	"time"
 
 	"./intcode"
 )
+
+type network struct {
+	PCs     []*intcode.PC
+	PacketQ chan networkPacket
+}
+
+type networkPacket struct {
+	Address, X, Y int64
+}
+
+type natEvent func(x int64, y int64)
+
+const natAddress = 255
+
+func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSend natEvent) network {
+	net := network{PCs: make([]*intcode.PC, pcCount), PacketQ: make(chan networkPacket, 1024)}
+	natX, natY := int64(0), int64(0)
+
+	// Read (continuously) from the networkPacket queue(channel) and
+	// dispatch to other machines appropriately
+	go func(lan network) {
+		q := lan.PacketQ
+		for {
+			pk := <-q // Ok to block here. Can't do anything if we don't have a packet to dispatch.
+			addr := int(pk.Address)
+			if addr == natAddress {
+				natX, natY = pk.X, pk.Y
+				onNatReceive(pk.X, pk.Y)
+			} else {
+				//log.Printf("Dispatch msg to %d. X: %d; Y: %d", addr, pk.X, pk.Y)
+				lan.PCs[addr].Enqueue(pk.X)
+				lan.PCs[addr].Enqueue(pk.Y)
+			}
+		}
+	}(net)
+
+	// Create all the intcode pcs
+	for i := 0; i < pcCount; i++ {
+		pc := intcode.PC{InQ: make(chan int64), OutQ: make(chan int64)}
+		net.PCs[i] = &pc
+
+		// Read from the pc output queue/channel and when
+		// we have three items send them, as a complete networkPacket,
+		// to the network packet queue(channel)
+		go func(pcQ chan int64, packetQ chan networkPacket) {
+			packetindex := 0
+			packetbuilder := make([]int64, 3)
+
+			for {
+				select { // Don't block while waiting for output from the pc
+				case qitem := <-pcQ:
+					packetbuilder[packetindex] = qitem
+					packetindex++
+					if packetindex == 3 {
+						pk := networkPacket{
+							Address: packetbuilder[0],
+							X:       packetbuilder[1],
+							Y:       packetbuilder[2],
+						}
+						packetQ <- pk
+						packetindex = 0
+					}
+				default:
+					// Yield to let everyone else have bit of processor time
+					time.Sleep(1 * time.Millisecond)
+				}
+			}
+		}(pc.OutQ, net.PacketQ)
+
+		// Run each pc in it's own Go routine
+		go pc.RunProgram(program)
+		// Set the 'network address'
+		pc.Enqueue(int64(i))
+	}
+
+	// Monitor the network
+	go func(lan network) {
+		idlecount := 0
+		for {
+			if allPCsIdle(lan.PCs) {
+				idlecount++
+				// We must wait enough time for the network to "settle".
+				// idlecount > 2 with a sleep time of between 2-5ms seems to achieve that - may
+				// need different values on different hardware. Maybe.
+				// However... approx 1 in 10 runs part2 gets an incorrect answer
+				if idlecount > 2 && !(natX == 0 && natY == 0) {
+					idlecount = 0
+					// Send the most recent NAT values to address 0
+					onNatSend(natX, natY)
+					lan.PCs[0].Enqueue(natX)
+					lan.PCs[0].Enqueue(natY)
+					natX, natY = 0, 0 // Reset so that we don't send the same value without having received them first
+				} else {
+					// Poke each pc by sending it -1
+					for pci := 0; pci < pcCount; pci++ {
+						lan.PCs[pci].Enqueue(-1)
+					}
+				}
+			} else {
+				idlecount = 0
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+	}(net)
+
+	return net
+}
 
 func main() {
 	dir, _ := os.Getwd()
@@ -17,106 +125,36 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Set up 50 intcode machines
-	pcs := make([]*intcode.PC, 50)
-	for i := 0; i < 50; i++ {
-		// Make the input channel non-buffered and the output channel buffered
-		pc := intcode.PC{InQ: make(chan int64), OutQ: make(chan int64, 32)}
-		pcs[i] = &pc
-		go pc.RunProgram(input)
-		// Set the 'network address'
-		pc.Enqueue(int64(i))
-	}
-
-	// Set up a map for each pc used for collecting outputs until we
-	// have 3 to create a complete (Address,X,Y) packet
-	outputs := make(map[int][]int64)
-
+	lastnaty := int64(0)
 	part1, part2 := int64(0), int64(0)
-	natX, natY, lastnatY := int64(0), int64(0), int64(0)
-	done := false
-	idlecount := 0
-	for !done {
-		recvd := false
-		for pcindex := 0; pcindex < 50; pcindex++ {
-			// Try and get a value from this pc out queue
-			pc := pcs[pcindex]
-			nextpc := false
-			for !nextpc {
-				select {
-				case output := <-pc.OutQ:
-					recvd = true
-					packet, ok := outputs[pcindex]
-					if !ok {
-						outputs[pcindex] = []int64{output}
-					} else {
-						outputs[pcindex] = append(packet, output)
-					}
-					// When we have collected 3 outputs from this pc then
-					// retrieve them as a packet and send it off to the
-					// appropriate receiver
-					if len(outputs[pcindex]) == 3 {
-						addr := outputs[pcindex][0]
-						pX := outputs[pcindex][1]
-						pY := outputs[pcindex][2]
-						if int64(255) == addr {
-							//log.Printf("Received NAT packet from %d: X=%d; Y=%d", pcindex, pX, pY)
-							natX = pX
-							natY = pY
-							if part1 == 0 {
-								part1 = pY
-							}
-						} else {
-							//log.Printf("Sending packet from %d to %d: X=%d; Y=%d", pcindex, addr, pX, pY)
-							pcs[int(addr)].Enqueue(pX)
-							pcs[int(addr)].Enqueue(pY)
-						}
-						// Clear out the received values
-						outputs[pcindex] = nil
-					}
-				default:
-					// Move on to the next pc
-					nextpc = true
-				}
-			}
-		}
-
-		// Check if all are idle
-		if !recvd && allPCsIdle(pcs) {
-			idlecount++
-
-			// Need to give the network a chance to settle so check
-			// the idle status at least a couple of times.
-			// Not really happy with this as it appears to be quite arbitrary
-			// with a few timing issues.
-			// However, on my hardware, an idlecount of 2 gives the system
-			// enough time to sttle and give a repeatable answer.
-			if idlecount > 2 {
-				idlecount = 0
-
-				if !(natX == 0 && natY == 0) {
-					if natY == lastnatY {
-						part2 = natY
-						done = true
-					}
-					//log.Printf("Sending NAT packet to 0: X=%d; Y=%d", natX, natY)
-					pcs[0].Enqueue(natX)
-					pcs[0].Enqueue(natY)
-
-					lastnatY = natY
-					natX = 0
-					natY = 0
-				}
-			} else {
-				for pci := 0; pci < 50; pci++ {
-					pcs[pci].Enqueue(int64(-1))
-				}
-			}
+	onNatRecv := func(x int64, y int64) {
+		//log.Printf("NAT receive X: %d; Y: %d", x, y)
+		if part1 == 0 {
+			part1 = y
+			fmt.Println("Part 1: ", part1)
 		}
 	}
+	onNatSend := func(x int64, y int64) {
+		//log.Printf("NAT send X: %d; Y: %d", x, y)
+		if x != 0 && y != 0 {
+			if part2 == 0 && lastnaty == y {
+				part2 = y
+				fmt.Println("Part 2: ", part2)
+			}
+			lastnaty = y
+		}
+	}
+	// Set up 50 intcode machines
+	createNetwork(50, input, onNatRecv, onNatSend)
 
-	fmt.Println("Part 1: ", part1)
-	fmt.Println("Part 2: ", part2)
+	done := false
+	for !done {
+		done = part1 != 0 && part2 != 0
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	//fmt.Println("Part 1: ", part1)
+	//fmt.Println("Part 2: ", part2)
 }
 
 func allPCsIdle(pcs []*intcode.PC) bool {
