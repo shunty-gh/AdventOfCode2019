@@ -141,14 +141,14 @@ func createNetwork(pcCount int, program []int64, onNatReceive natEvent, onNatSen
 
 func main() {
 	dir, _ := os.Getwd()
-	inputname := path.Join(dir, "day23-input.txt")
-	input, err := intcode.InputToIntcodeProgram(inputname)
+	input, err := intcode.InputToIntcodeProgram(path.Join(dir, "day23-input.txt"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	lastnaty := int64(0)
-	part1, part2 := int64(0), int64(0)
+	var part1, part2, lastnat int64 = 0, 0, 0
+	done := make(chan bool)
+
 	onNatRecv := func(x int64, y int64) {
 		//log.Printf("NAT receive X: %d; Y: %d", x, y)
 		if part1 == 0 {
@@ -159,22 +159,16 @@ func main() {
 	onNatSend := func(x int64, y int64) {
 		//log.Printf("NAT send X: %d; Y: %d", x, y)
 		if x != 0 && y != 0 {
-			if part2 == 0 && lastnaty == y {
+			if part2 == 0 && lastnat == y {
 				part2 = y
 				fmt.Println("Part 2: ", part2)
+				done <- true // Assuming part 2 fnishes after part 1
 			}
-			lastnaty = y
+			lastnat = y
 		}
 	}
 	// Set up 50 intcode machines
 	createNetwork(50, input, onNatRecv, onNatSend)
-
-	done := false
-	for !done {
-		done = part1 != 0 && part2 != 0
-		time.Sleep(5 * time.Millisecond)
-	}
-
-	//fmt.Println("Part 1: ", part1)
-	//fmt.Println("Part 2: ", part2)
+	// Wait/block until we're finished
+	<-done
 }
