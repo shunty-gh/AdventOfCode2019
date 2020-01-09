@@ -7,7 +7,7 @@ import (
 	"path"
 	"time"
 
-	"./intcode"
+	"../intcode"
 )
 
 type network struct {
