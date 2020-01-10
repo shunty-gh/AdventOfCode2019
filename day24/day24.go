@@ -30,11 +30,10 @@ func main() {
 		eris = eris.evolve(false)
 		rating := eris.rating()
 		// Look for the first repeated rating
-		if _, ok := ratings[rating]; ok {
+		if ratings[rating] { // Maps return the zero value (ie false in this case) if key not present. So don't need _,ok :=...
 			part1 = rating
-		} else {
-			ratings[rating] = true
 		}
+		ratings[rating] = true
 	}
 	//drawWorld(eris)
 	fmt.Println("Part 1: ", part1)
