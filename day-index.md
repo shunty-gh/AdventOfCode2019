@@ -125,8 +125,8 @@ Used threading here but that probably made it harder (and, most likely, slower (
 `C#, Go`
 
 ### Day 24 - Planet of Discord
-Basic Game of life in part 1 but then extended to recursive levels within levels for part 2.    
-`C#`
+Basic Game of life in part 1 but then extended to recursive levels within levels for part 2. No recursion in the solution though.    
+`C#, Go`
 
 ### Day 25 - Cryostasis 
 `IntCode` to explore ship (manually - like an old fashioned game), find items, find the right combination of items. By making the `IntCode` threaded I made the solution to this problem much harder and slower than it could have been.    
