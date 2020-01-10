@@ -11,8 +11,8 @@ type location struct {
 	X, Y, Z int
 }
 
-// Planet : A simple map of a planet
-type Planet map[location]byte
+// Planet : A simple map of a bug infested planet
+type Planet map[location]bool
 
 func main() {
 	input, err := getInput("./day24-input.txt")
@@ -24,15 +24,15 @@ func main() {
 	// Part 1
 	eris := initPlanet(input)
 	part1 := 0
-	ratings := make(map[int]bool) // To completely anal about memory saving we could use map[int]struct{} instead
-	for part1 == 0 {              // Assume result isn't 0
+	ratings := make(map[int]bool) // To be completely anal about memory saving we could use map[int]struct{} instead
+	for {                         // Assume result isn't 0
 		eris = eris.evolve(false)
-		rating := eris.rating()
 		// Look for the first repeated rating
-		if ratings[rating] { // Maps return the zero value (ie false in this case) if key not present. So don't need _,ok :=...
-			part1 = rating
+		// Maps return the zero value (ie false in this case) if key not present. So don't need _,ok :=...
+		if part1 = eris.rating(); ratings[part1] {
+			break
 		}
-		ratings[rating] = true
+		ratings[part1] = true
 	}
 	//drawWorld(eris)
 	fmt.Println("Part 1: ", part1)
@@ -45,7 +45,7 @@ func main() {
 	// Count all bugs
 	part2 := 0
 	for _, content := range eris {
-		if content == '#' {
+		if content {
 			part2++
 		}
 	}
@@ -58,7 +58,9 @@ func initPlanet(input []string) Planet {
 	result := make(Planet)
 	for y, line := range input {
 		for x := 0; x < len(line); x++ {
-			result[location{x, y, 0}] = line[x]
+			if line[x] == '#' {
+				result[location{x, y, 0}] = true
+			}
 		}
 	}
 	return result
@@ -67,7 +69,7 @@ func initPlanet(input []string) Planet {
 func (planet Planet) rating() int {
 	result := 0
 	for loc, b := range planet {
-		if b == '#' {
+		if b {
 			result += 1 << (5*loc.Y + loc.X)
 		}
 	}
@@ -103,12 +105,12 @@ func (planet Planet) evolve(useLevels bool) Planet {
 				}
 				loc := location{x, y, z}
 				b, ok := planet[loc]
-				neighbours := getNeighbourCount(loc, planet)
+				neighbours := planet.getNeighbourCount(loc)
 				// Apply rules
-				if b == '#' && neighbours != 1 {
-					result[loc] = '.'
-				} else if (b == '.' || !ok) && (neighbours == 1 || neighbours == 2) { // if !ok then this will be on another, currently unused, level
-					result[loc] = '#'
+				if b && neighbours != 1 {
+					result[loc] = false
+				} else if (!b || !ok) && (neighbours == 1 || neighbours == 2) { // if !ok then this will be on another, currently unused, level
+					result[loc] = true
 				} else if ok { // Don't create empty locations on currently unused levels. Just saves a little bit of memory and time.
 					result[loc] = b
 				}
@@ -119,14 +121,13 @@ func (planet Planet) evolve(useLevels bool) Planet {
 }
 
 func (planet Planet) bugsAt(loc location) int {
-	b, ok := planet[loc]
-	if ok && b == '#' {
+	if b, ok := planet[loc]; ok && b {
 		return 1
 	}
 	return 0
 }
 
-func getNeighbourCount(loc location, planet Planet) int {
+func (planet Planet) getNeighbourCount(loc location) int {
 	// This level neighbours
 	neighbours := []location{
 		location{0, -1, 0},
@@ -204,8 +205,8 @@ func drawWorld(planet Planet) {
 func drawWorldLevel(planet Planet, level int) {
 	for y := 0; y < 5; y++ {
 		for x := 0; x < 5; x++ {
-			if b, ok := planet[location{x, y, level}]; ok {
-				fmt.Print(string(b))
+			if b, ok := planet[location{x, y, level}]; ok && b {
+				fmt.Print('#')
 			} else {
 				fmt.Print(".")
 			}
