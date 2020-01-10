@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"strings"
 )
 
@@ -67,9 +66,9 @@ func initPlanet(input []string) Planet {
 
 func (planet Planet) rating() int {
 	result := 0
-	for l, b := range planet {
+	for loc, b := range planet {
 		if b == '#' {
-			result += int(math.Pow(2, float64(5*l.Y+l.X)))
+			result += 1 << (5*loc.Y + loc.X)
 		}
 	}
 	return result
