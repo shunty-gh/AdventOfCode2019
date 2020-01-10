@@ -25,7 +25,7 @@ func main() {
 	eris := initPlanet(input)
 	part1 := 0
 	ratings := make(map[int]bool) // To be completely anal about memory saving we could use map[int]struct{} instead
-	for {                         // Assume result isn't 0
+	for {
 		eris = eris.evolve(false)
 		// Look for the first repeated rating
 		// Maps return the zero value (ie false in this case) if key not present. So don't need _,ok :=...
