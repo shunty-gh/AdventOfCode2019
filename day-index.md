@@ -121,7 +121,7 @@ The big, nasty, modular arithmetic one. Combining linear functions. Multiplicati
 
 ### Day 23 - Category Six
 Use the `IntCode` program to send 'network packets' back and forth between 50 `IntCode` instances.   
-Used threading here but that probably made it harder (and, most likely, slower (for C# version)) in the log run. The Go version, with channels and go routines is fast (and quite neat, I think!) but the C# version is very slow due to some messed up threading.    
+Used threading here but that probably made it harder (and, most likely, slower for the C# version) in the long run. The Go version, with channels and go routines is fast (and quite neat, I think!) but the C# version is very slow due to some messed up threading.    
 `C#, Go`
 
 ### Day 24 - Planet of Discord
