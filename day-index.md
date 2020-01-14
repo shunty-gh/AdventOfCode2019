@@ -109,7 +109,7 @@ BFS for paths between keys (because it is a maze).
 
 ### Day 20 - Donut Maze
 BFS on a maze with multiple levels.    
-`C#`
+`C#, Go`
 
 ### Day 21 - Springdroid Adventure
 Program the `IntCode` machine to use logical AND OR NOT to guide a jumping robot around holes in the hull.    
