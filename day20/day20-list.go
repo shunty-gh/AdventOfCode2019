@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -94,21 +95,23 @@ func (maze Maze) getPortalExit(loc GridRef, level int, useLevels bool) (exit Gri
 }
 
 func (maze Maze) shortestPath(start GridRef, target GridRef, useLevels bool) int {
-	// Using an array/slice as our queue
+	// Using a container/list as our queue
 	defer timeIt(time.Now(), fmt.Sprintf("shortestPath(). Levels=%v", useLevels))
 
 	moves := []GridRef{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
-	q := []locationToVisit{locationToVisit{start, 0, 0}}
+	ql := list.New()
+	ql.PushBack(locationToVisit{start, 0, 0})
+
 	visited := make(map[visitedLocation]bool)
 	for {
-		vl := q[0]
+		vl := ql.Remove(ql.Front()).(locationToVisit)
 		loc, lvl, dist := vl.Location, vl.Level, vl.Distance
 
 		// Check if we're on a portal and go to the portal exit if so.
 		if maze.isPortal(loc, lvl, useLevels) {
 			port, newlevel := maze.getPortalExit(loc, lvl, useLevels)
 			visited[visitedLocation{port.X, port.Y, newlevel}] = true
-			q = append(q, locationToVisit{port, newlevel, dist + 1})
+			ql.PushBack(locationToVisit{port, newlevel, dist + 1})
 		}
 		for _, move := range moves {
 			nextloc := GridRef{loc.X + move.X, loc.Y + move.Y}
@@ -122,10 +125,9 @@ func (maze Maze) shortestPath(start GridRef, target GridRef, useLevels bool) int
 			// Check it is a valid place to visit
 			if mc, ok := maze.Map[nextloc]; ok && mc {
 				visited[visitedLocation{nextloc.X, nextloc.Y, lvl}] = true
-				q = append(q, locationToVisit{nextloc, lvl, dist + 1})
+				ql.PushBack(locationToVisit{nextloc, lvl, dist + 1})
 			}
 		}
-		q = q[1:]
 	}
 }
 
